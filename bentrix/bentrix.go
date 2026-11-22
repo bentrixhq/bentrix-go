@@ -7,7 +7,7 @@
 package bentrix
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../../../crates/bentrix-ffi/include
+#cgo CFLAGS: -I${SRCDIR}/../include -I${SRCDIR}/../../../crates/bentrix-ffi/include
 #cgo LDFLAGS: -lbentrix
 #include <stdlib.h>
 #include "bentrix.h"
