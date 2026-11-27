@@ -8,7 +8,7 @@ The client is generated from the catalogue of the Bentrix release it came with, 
 
 ## What you need
 
-Go 1.23 or later, and Bentrix open on the same computer.
+Go 1.24 or later, and Bentrix open on the same computer.
 
 ## Install
 

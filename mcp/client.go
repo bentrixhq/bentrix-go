@@ -1,10 +1,10 @@
-// Package mcp is BENTRIX's MCP client for Go: this file by hand - the connection and everything that does
+// Package mcp is Bentrix's MCP client for Go: this file by hand - the connection and everything that does
 // not change when a capability is added - and generated.go from the capability catalogue. It speaks MCP
 // revision 2026-07-28 over Streamable HTTP with net/http: every request is its own POST carrying the
 // protocol version, the client's identity and its (empty) capabilities in _meta - the same wire as the
 // Python client's _runtime.py and the JavaScript client's client.js, field for field.
 //
-// Connect finds the running application through endpoint.json in BENTRIX's agents folder, pairs with it
+// Connect finds the running application through endpoint.json in Bentrix's agents folder, pairs with it
 // through local.secret under a name of this process, and connects with the token it gets.
 package mcp
 
@@ -36,7 +36,7 @@ const (
 	SecretFile      = "local.secret"
 )
 
-// Error is a refusal or a failure, in BENTRIX's own words.
+// Error is a refusal or a failure, in Bentrix's own words.
 type Error struct{ Msg string }
 
 func (e *Error) Error() string { return e.Msg }
@@ -125,7 +125,7 @@ type WatchOptions struct {
 // wait_for beyond the client's own timeout ended in the client before the server could answer).
 const LongPollMargin = 15 * time.Second
 
-// Client is one BENTRIX endpoint. Embedded in the generated Bentrix.
+// Client is one Bentrix endpoint. Embedded in the generated Bentrix.
 type Client struct {
 	URL              string
 	CatalogueVersion string
@@ -192,6 +192,21 @@ func scalar(v any) string {
 
 var templatePart = regexp.MustCompile(`\{([?&]?)([^}]+)\}`)
 
+// fromAddress reads a workbench's address for its three parts: Bench given as a
+// "bentrix://<home>/<owner>/bench/<name>" address - Home and Owner left empty - fills home, owner and bench. Parts
+// given as before are left as they are.
+func fromAddress(values map[string]any) {
+	s, ok := values["bench"].(string)
+	if !ok || !strings.HasPrefix(s, "bentrix://") {
+		return
+	}
+	parts := strings.Split(strings.TrimPrefix(s, "bentrix://"), "/")
+	if len(parts) < 4 || parts[2] != "bench" {
+		return
+	}
+	values["home"], values["owner"], values["bench"] = parts[0], parts[1], parts[3]
+}
+
 // expandTemplate is the RFC 6570 subset the catalogue uses: {name} and {?a,b}. An absent optional is
 // left out.
 func expandTemplate(template string, vars any) (string, error) {
@@ -199,6 +214,7 @@ func expandTemplate(template string, vars any) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	fromAddress(values)
 	var missing string
 	out := templatePart.ReplaceAllStringFunc(template, func(m string) string {
 		g := templatePart.FindStringSubmatch(m)
@@ -616,7 +632,7 @@ func (c *Client) VerifyCatalogue(ctx context.Context) (string, error) {
 	return server, nil
 }
 
-// AgentsDir is the folder BENTRIX writes its endpoint and secret into - user_dir(Data, "agents"), as the
+// AgentsDir is the folder Bentrix writes its endpoint and secret into - user_dir(Data, "agents"), as the
 // application has it.
 func AgentsDir() string {
 	if lad := os.Getenv("LOCALAPPDATA"); lad != "" {
@@ -648,7 +664,7 @@ func ReadEndpoint(folder string) (string, error) {
 	return doc.URL, nil
 }
 
-// ReadSecret is the secret BENTRIX wrote at its start.
+// ReadSecret is the secret Bentrix wrote at its start.
 func ReadSecret(folder string) (string, error) {
 	raw, err := os.ReadFile(filepath.Join(folder, SecretFile))
 	if err != nil {

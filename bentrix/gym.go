@@ -1,6 +1,6 @@
 package bentrix
 
-// The Gym: a client of BENTRIX's own environment. Reset(seed) answers the observation and its info;
+// The Gym: a client of Bentrix's own environment. Reset(seed) answers the observation and its info;
 // Step(action) the observation, the reward, terminated, truncated and the info - Gymnasium's shape.
 
 // EnvOptions are env_make's arguments; a zero value leaves the environment's default.

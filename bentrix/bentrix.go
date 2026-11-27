@@ -1,5 +1,5 @@
-// Package bentrix is BENTRIX's engine in your own Go process, through its C ABI
-// (crates/bentrix-ffi/include/bentrix.h), and its Gym - a client of BENTRIX's own environment
+// Package bentrix is Bentrix's engine in your own Go process, through its C ABI
+// (crates/bentrix-ffi/include/bentrix.h), and its Gym - a client of Bentrix's own environment
 // (env_make, env_reset, env_step), the one every language reaches.
 //
 // Build with the library's folder on the linker's path: CGO_LDFLAGS="-L<dir>" and, at run time,
@@ -17,11 +17,12 @@ import "C"
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"unsafe"
 )
 
-// Error is a refusal or a failure, in BENTRIX's own words.
+// Error is a refusal or a failure, in Bentrix's own words.
 type Error struct{ Message string }
 
 func (e *Error) Error() string { return e.Message }
@@ -38,12 +39,15 @@ func take(p *C.char) (string, error) {
 	return C.GoString(p), nil
 }
 
-// Local is an embedded BENTRIX over a workspace and its recordings.
+// Local is an embedded Bentrix over a workspace and its recordings.
 type Local struct{ s *C.BxSession }
 
 // Open opens workspace (yours when "") and its recordings (yours when ""). A window or a --serve
 // already on the workspace refuses it by name.
 func Open(workspace, store string) (*Local, error) {
+	if err := refuseAnotherInterface(); err != nil {
+		return nil, err
+	}
 	var ws, st *C.char
 	if workspace != "" {
 		ws = cstr(workspace)
@@ -53,7 +57,9 @@ func Open(workspace, store string) (*Local, error) {
 		st = cstr(store)
 		defer C.free(unsafe.Pointer(st))
 	}
-	s := C.bx_open(ws, st)
+	client := cstr("Go")
+	defer C.free(unsafe.Pointer(client))
+	s := C.bx_open(ws, st, client)
 	if s == nil {
 		return nil, lastError()
 	}
@@ -135,6 +141,24 @@ func (l *Local) Book(bench string) (map[string]any, error) {
 
 // Version is the build of the engine loaded.
 func Version() string { return C.GoString(C.bx_version()) }
+
+// ABI is the engine's interface this package speaks (bx_abi): a library
+// of another one is refused before bx_open, in a sentence naming both.
+const ABI = 2
+
+// refuseAnotherInterface refuses, in words, unless the library speaks ABI. A library from before bx_abi (0.1.382)
+// does not link with this package at all.
+func refuseAnotherInterface() error {
+	have := int(C.bx_abi())
+	if have == ABI {
+		return nil
+	}
+	update := "update this package"
+	if have < ABI {
+		update = "update Bentrix"
+	}
+	return &Error{fmt.Sprintf("Bentrix's engine library speaks interface %d (Bentrix %s) and this package speaks %d: %s.", have, Version(), ABI, update)}
+}
 
 // IntervalMs is an interval's length in ms (M1, H4, D1); 0 for one with no fixed length.
 func IntervalMs(label string) int64 {
